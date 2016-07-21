@@ -1,6 +1,6 @@
 use syslog_ng_common::LogMessage;
 
-use cpython::{Python, ToPyObject, NoArgs,PyObject, PyResult, PyString};
+use cpython::{Python, ToPyObject, NoArgs, PyObject, PyResult, PyString};
 use cpython::rustobject::{TypeBuilder, PyRustObject};
 
 fn getitem(py: Python, slf: &PyRustObject<LogMessage>, arg: &str) -> PyResult<PyString> {
@@ -21,7 +21,7 @@ fn setitem(py: Python, slf: &PyRustObject<LogMessage>, key: &str, value: &str) -
 pub struct PyLogMessage(PyRustObject<LogMessage>);
 
 impl PyLogMessage {
-    pub fn new<'p>(py: Python<'p>, logmsg: LogMessage) -> PyResult<PyLogMessage> {
+    pub fn new(py: Python, logmsg: LogMessage) -> PyResult<PyLogMessage> {
         let mut b = TypeBuilder::<LogMessage>::new(py, "PyLogMessage");
         b.add("__getitem__", py_method!(getitem(arg: &str)));
         b.add("__setitem__", py_method!(setitem(key: &str, value: &str)));
