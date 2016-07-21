@@ -26,7 +26,7 @@ pub enum LogTimeZone {
 
 pub enum Error {
     Glib(glib::Error),
-    Nul(NulError)
+    Nul(NulError),
 }
 
 impl From<NulError> for Error {
@@ -56,7 +56,8 @@ impl LogTemplate {
         let template = LogTemplate::new(cfg);
         let content = try!(CString::new(content));
         let mut error = ::std::ptr::null_mut();
-        let result = unsafe { sys::log_template_compile(template.wrapped, content.as_ptr(), &mut error) };
+        let result =
+            unsafe { sys::log_template_compile(template.wrapped, content.as_ptr(), &mut error) };
         if result != 0 {
             Ok(template)
         } else {
@@ -64,20 +65,48 @@ impl LogTemplate {
         }
     }
 
-    pub fn format(&mut self, msg: &LogMessage, options: Option<&LogTemplateOptions>, tz: LogTimeZone, seq_num: i32) -> &[u8] {
-        let options: *const sys::LogTemplateOptions = options.map_or(::std::ptr::null(), |options| options.0);
+    pub fn format(&mut self,
+                  msg: &LogMessage,
+                  options: Option<&LogTemplateOptions>,
+                  tz: LogTimeZone,
+                  seq_num: i32)
+                  -> &[u8] {
+        let options: *const sys::LogTemplateOptions =
+            options.map_or(::std::ptr::null(), |options| options.0);
         unsafe {
-            sys::log_template_format(self.wrapped, msg.0, options, tz as i32, seq_num, ::std::ptr::null(), self.buffer);
+            sys::log_template_format(self.wrapped,
+                                     msg.0,
+                                     options,
+                                     tz as i32,
+                                     seq_num,
+                                     ::std::ptr::null(),
+                                     self.buffer);
             from_raw_parts((*self.buffer).str as *const u8, (*self.buffer).len)
         }
     }
 
-    pub fn format_with_context(&mut self, messages: &[LogMessage], options: Option<&LogTemplateOptions>, tz: LogTimeZone, seq_num: i32, context_id: &str) -> &[u8] {
-        let options: *const sys::LogTemplateOptions = options.map_or(::std::ptr::null(), |options| options.0);
-        let messages = messages.iter().map(|msg| msg.0 as *const syslog_ng_sys::LogMessage).collect::<Vec<*const syslog_ng_sys::LogMessage>>();
+    pub fn format_with_context(&mut self,
+                               messages: &[LogMessage],
+                               options: Option<&LogTemplateOptions>,
+                               tz: LogTimeZone,
+                               seq_num: i32,
+                               context_id: &str)
+                               -> &[u8] {
+        let options: *const sys::LogTemplateOptions =
+            options.map_or(::std::ptr::null(), |options| options.0);
+        let messages = messages.iter()
+            .map(|msg| msg.0 as *const syslog_ng_sys::LogMessage)
+            .collect::<Vec<*const syslog_ng_sys::LogMessage>>();
         let context_id = CString::new(context_id).unwrap();
         unsafe {
-            sys::log_template_format_with_context(self.wrapped, messages.as_ptr(), messages.len() as i32, options, tz as i32, seq_num, context_id.as_ptr(), self.buffer);
+            sys::log_template_format_with_context(self.wrapped,
+                                                  messages.as_ptr(),
+                                                  messages.len() as i32,
+                                                  options,
+                                                  tz as i32,
+                                                  seq_num,
+                                                  context_id.as_ptr(),
+                                                  self.buffer);
             from_raw_parts((*self.buffer).str as *const u8, (*self.buffer).len)
         }
     }
@@ -91,3 +120,5 @@ impl Drop for LogTemplate {
         };
     }
 }
+
+unsafe impl Send for LogTemplate {}
